@@ -1,0 +1,48 @@
+services:
+  # Base de datos PostgreSQL
+  - type: pserv
+    name: mibollito-db
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile.postgres
+    envVars:
+      - key: POSTGRES_DB
+        value: bd_mibollito
+      - key: POSTGRES_USER
+        generateValue: true
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+  # Aplicación Web PHP
+  - type: web
+    name: mibollito-web
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /login.php
+    envVars:
+      - key: DB_HOST
+        fromService:
+          type: pserv
+          name: mibollito-db
+          property: host
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        value: bd_mibollito
+      - key: DB_USER
+        fromService:
+          type: pserv
+          name: mibollito-db
+          envVarKey: POSTGRES_USER
+      - key: DB_PASSWORD
+        fromService:
+          type: pserv
+          name: mibollito-db
+          envVarKey: POSTGRES_PASSWORD

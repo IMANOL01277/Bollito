@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: mibollito_web
+    ports:
+      - "8080:80"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=bd_mibollito
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres123
+    depends_on:
+      - db
+    volumes:
+      - .:/var/www/html
+    networks:
+      - mibollito_network
+
+  db:
+    image: postgres:15-alpine
+    container_name: mibollito_db
+    environment:
+      - POSTGRES_DB=bd_mibollito
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./bd_mibollito_postgresql.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mibollito_network
+
+volumes:
+  postgres_data:
+
+networks:
+  mibollito_network:
+    driver: bridge
