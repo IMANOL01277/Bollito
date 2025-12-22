@@ -40,6 +40,8 @@
 .dashboard-card.red { border-left-color: #ef4444; }
 .dashboard-card.orange { border-left-color: #f97316; }
 .dashboard-card.teal { border-left-color: #14b8a6; }
+.dashboard-card.pink { border-left-color: #ec4899; }
+.dashboard-card.indigo { border-left-color: #6366f1; }
 
 .card-icon {
   font-size: 3rem;
@@ -130,7 +132,7 @@
 <!-- Módulos Principales -->
 <h4 class="mb-4"><i class="bi bi-grid-3x3-gap me-2"></i>Módulos del Sistema</h4>
 <div class="row g-4">
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="inventario.php" class="card-link">
       <div class="dashboard-card yellow" style="animation-delay: 0.1s;">
         <i class="bi bi-box-seam card-icon text-warning"></i>
@@ -141,7 +143,7 @@
     </a>
   </div>
   
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="estadisticas.php" class="card-link">
       <div class="dashboard-card green" style="animation-delay: 0.2s;">
         <i class="bi bi-graph-up card-icon text-success"></i>
@@ -152,7 +154,7 @@
     </a>
   </div>
   
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="domicilios.php" class="card-link">
       <div class="dashboard-card blue" style="animation-delay: 0.3s;">
         <i class="bi bi-bicycle card-icon text-primary"></i>
@@ -163,10 +165,32 @@
     </a>
   </div>
 
+  <div class="col-md-3">
+    <a href="promociones.php" class="card-link">
+      <div class="dashboard-card red" style="animation-delay: 0.4s;">
+        <i class="bi bi-tag-fill card-icon text-danger"></i>
+        <h5 class="card-title">Promociones</h5>
+        <p class="text-muted small">Descuentos y ofertas</p>
+        <button class="btn btn-outline-danger btn-sm mt-2">Ver Promociones</button>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-3">
+    <a href="devoluciones.php" class="card-link">
+      <div class="dashboard-card pink" style="animation-delay: 0.5s;">
+        <i class="bi bi-arrow-return-left card-icon" style="color: #ec4899;"></i>
+        <h5 class="card-title">Devoluciones</h5>
+        <p class="text-muted small">Gestión de devoluciones</p>
+        <button class="btn btn-outline-danger btn-sm mt-2" style="border-color: #ec4899; color: #ec4899;">Gestionar</button>
+      </div>
+    </a>
+  </div>
+
   <?php if ($_SESSION['rol'] === 'administrador'): ?>
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="usuarios.php" class="card-link">
-      <div class="dashboard-card purple" style="animation-delay: 0.4s;">
+      <div class="dashboard-card purple" style="animation-delay: 0.6s;">
         <i class="bi bi-people card-icon text-purple"></i>
         <h5 class="card-title">Usuarios</h5>
         <p class="text-muted small">Administrar accesos</p>
@@ -175,9 +199,9 @@
     </a>
   </div>
   
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="categorias.php" class="card-link">
-      <div class="dashboard-card orange" style="animation-delay: 0.5s;">
+      <div class="dashboard-card orange" style="animation-delay: 0.7s;">
         <i class="bi bi-bookmark card-icon text-warning"></i>
         <h5 class="card-title">Categorías</h5>
         <p class="text-muted small">Organiza productos</p>
@@ -186,9 +210,9 @@
     </a>
   </div>
   
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="proveedores.php" class="card-link">
-      <div class="dashboard-card teal" style="animation-delay: 0.6s;">
+      <div class="dashboard-card teal" style="animation-delay: 0.8s;">
         <i class="bi bi-truck card-icon text-info"></i>
         <h5 class="card-title">Proveedores</h5>
         <p class="text-muted small">Gestiona proveedores</p>
@@ -197,13 +221,13 @@
     </a>
   </div>
   
-  <div class="col-md-4">
+  <div class="col-md-3">
     <a href="vendedores.php" class="card-link">
-      <div class="dashboard-card red" style="animation-delay: 0.7s;">
-        <i class="bi bi-person-badge card-icon text-danger"></i>
+      <div class="dashboard-card indigo" style="animation-delay: 0.9s;">
+        <i class="bi bi-person-badge card-icon" style="color: #6366f1;"></i>
         <h5 class="card-title">Vendedores</h5>
         <p class="text-muted small">Vendedores ambulantes</p>
-        <button class="btn btn-outline-danger btn-sm mt-2">Administrar</button>
+        <button class="btn btn-outline-primary btn-sm mt-2" style="border-color: #6366f1; color: #6366f1;">Administrar</button>
       </div>
     </a>
   </div>

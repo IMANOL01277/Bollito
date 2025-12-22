@@ -7,137 +7,235 @@ if ($_SESSION['rol'] !== 'administrador') {
     include 'includes/footer.php';
     exit();
 }
-
-// === AGREGAR VENDEDOR ===
-if (isset($_POST['add_vendedor'])) {
-    $id_usuario = (int)$_POST['id_usuario'];
-    $zona = pg_escape($conn, $_POST['zona']);
-
-    $query = "INSERT INTO vendedores_ambulantes (id_usuario, zona) VALUES ($1, $2)";
-    $result = pg_query_params($conn, $query, [$id_usuario, $zona]);
-
-    if ($result) {
-        $mensaje = "Vendedor agregado correctamente";
-    } else {
-        $error = "Error al guardar vendedor: " . pg_last_error($conn);
-    }
-}
-
-// === ELIMINAR VENDEDOR ===
-if (isset($_GET['eliminar'])) {
-    $id = (int)$_GET['eliminar'];
-    $result = pg_query_params($conn, "DELETE FROM vendedores_ambulantes WHERE id_vendedor = $1", [$id]);
-    header("Location: vendedores.php");
-    exit();
-}
-
-// === CONSULTAR USUARIOS DISPONIBLES ===
-$usuarios = pg_query($conn, "SELECT id_usuario, nombre FROM usuarios ORDER BY nombre ASC");
-
-// === CONSULTAR VENDEDORES ===
-$vendedores = pg_query($conn, "
-    SELECT v.id_vendedor, u.nombre AS usuario, v.zona, v.fecha_registro 
-    FROM vendedores_ambulantes v
-    INNER JOIN usuarios u ON u.id_usuario = v.id_usuario
-    ORDER BY v.id_vendedor DESC
-");
 ?>
 
 <style>
-.card-panel {
-    background: #ffffff;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+.seller-card {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  animation: slideIn 0.5s ease-out;
 }
-
-.table thead {
-    background: #7a3e1c;
-    color: #fff;
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
 }
-
-.btn-admin {
-    background: #7a3e1c;
-    color: white;
+.seller-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
 }
-.btn-admin:hover {
-    background: #5e2f15;
+.zone-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
 }
 </style>
 
-<div class="container mt-4">
-    <div class="card-panel">
-        <h3 class="mb-4">Gestión de Vendedores Ambulantes</h3>
-
-        <?php if (isset($mensaje)): ?>
-            <div class="alert alert-success"><?= $mensaje ?></div>
-        <?php elseif (isset($error)): ?>
-            <div class="alert alert-danger"><?= $error ?></div>
-        <?php endif; ?>
-
-        <h5 class="mb-3">➕ Registrar nuevo vendedor</h5>
-
-        <form method="POST" class="row g-3 mb-4">
-            <div class="col-md-6">
-                <label class="form-label">Seleccionar usuario</label>
-                <select name="id_usuario" class="form-select" required>
-                    <option value="">Seleccione un usuario...</option>
-                    <?php while($u = pg_fetch_assoc($usuarios)): ?>
-                        <option value="<?= $u['id_usuario'] ?>"><?= htmlspecialchars($u['nombre']) ?></option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Zona del vendedor</label>
-                <input type="text" name="zona" class="form-control" placeholder="Ej: Centro, Sur..." required>
-            </div>
-
-            <div class="col-12 text-end">
-                <button class="btn btn-admin" name="add_vendedor">Guardar vendedor</button>
-            </div>
-        </form>
-
-        <hr>
-
-        <h5 class="mb-3">📋 Lista de vendedores registrados</h5>
-
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Usuario</th>
-                        <th>Zona</th>
-                        <th>Fecha registro</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (pg_num_rows($vendedores) == 0): ?>
-                        <tr><td colspan="5" class="text-center">No hay vendedores registrados</td></tr>
-                    <?php else: ?>
-                        <?php while ($v = pg_fetch_assoc($vendedores)): ?>
-                        <tr>
-                            <td><?= $v['id_vendedor'] ?></td>
-                            <td><?= htmlspecialchars($v['usuario']) ?></td>
-                            <td><?= htmlspecialchars($v['zona']) ?></td>
-                            <td><?= $v['fecha_registro'] ?></td>
-                            <td>
-                                <a href="vendedores.php?eliminar=<?= $v['id_vendedor'] ?>"
-                                   class="btn btn-sm btn-danger"
-                                   onclick="return confirm('¿Eliminar vendedor?')">
-                                   Eliminar
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endwhile; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-
+<div class="container-fluid mt-4">
+  <div class="seller-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="mb-1 fw-bold"><i class="bi bi-person-badge me-2"></i>Gestión de Vendedores</h4>
+        <p class="text-muted small mb-0">Administra vendedores ambulantes y sus zonas</p>
+      </div>
+      <button class="btn btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#modalVendedor">
+        <i class="bi bi-plus-circle me-2"></i>Nuevo Vendedor
+      </button>
     </div>
+
+    <div id="alertVendedores"></div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle" id="tablaVendedores">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Vendedor</th>
+            <th>Zona Asignada</th>
+            <th>Fecha de Registro</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
 </div>
+
+<!-- Modal Crear/Editar -->
+<div class="modal fade" id="modalVendedor">
+  <div class="modal-dialog modal-dialog-centered">
+    <form id="formVendedor" class="modal-content">
+      <div class="modal-header text-dark" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
+        <h5 class="modal-title"><i class="bi bi-person-badge me-2"></i><span id="modalTitle">Nuevo Vendedor</span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="id_vendedor" id="id_vendedor">
+        
+        <div class="mb-3">
+          <label class="form-label fw-semibold"><i class="bi bi-person me-2"></i>Seleccionar usuario</label>
+          <select name="id_usuario" id="id_usuario" class="form-select" required>
+            <option value="">Seleccione un usuario...</option>
+          </select>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label fw-semibold"><i class="bi bi-geo-alt me-2"></i>Zona asignada</label>
+          <input type="text" class="form-control" name="zona" id="zona" placeholder="Ej: Centro, Norte, Sur..." required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-warning">
+          <i class="bi bi-save me-2"></i>Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showAlert(type, msg) {
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${type} alert-dismissible fade show`;
+  alert.innerHTML = `${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+  document.getElementById('alertVendedores').innerHTML = '';
+  document.getElementById('alertVendedores').appendChild(alert);
+  setTimeout(() => alert.remove(), 4000);
+}
+
+async function loadUsuarios() {
+  try {
+    const res = await fetch('ajax/usuarios.php?action=list');
+    const data = await res.json();
+    const select = document.getElementById('id_usuario');
+    select.innerHTML = '<option value="">Seleccione un usuario...</option>';
+    
+    if (data.success && data.users) {
+      data.users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id_usuario;
+        opt.textContent = u.nombre;
+        select.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error('Error cargando usuarios:', err);
+  }
+}
+
+async function loadVendedores() {
+  try {
+    const res = await fetch('ajax/vendedores.php?action=list');
+    const data = await res.json();
+    const tbody = document.querySelector('#tablaVendedores tbody');
+    tbody.innerHTML = '';
+    
+    if (!data.success || !data.vendedores || data.vendedores.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No hay vendedores registrados</td></tr>';
+      return;
+    }
+    
+    data.vendedores.forEach((v, i) => {
+      const tr = document.createElement('tr');
+      tr.style.animation = `fadeIn 0.5s ease-out ${i * 0.05}s both`;
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>
+          <div class="d-flex align-items-center">
+            <div class="seller-icon me-3">
+              <i class="bi bi-person-badge"></i>
+            </div>
+            <strong>${v.usuario}</strong>
+          </div>
+        </td>
+        <td><span class="zone-badge"><i class="bi bi-geo-alt me-1"></i>${v.zona}</span></td>
+        <td><small class="text-muted">${new Date(v.fecha_registro).toLocaleDateString('es-CO')}</small></td>
+        <td>
+          <button class="btn btn-sm btn-primary me-1" onclick='editVendedor(${JSON.stringify(v)})' title="Editar">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-danger" onclick='deleteVendedor(${v.id_vendedor})' title="Eliminar">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Error:', err);
+    showAlert('danger', '❌ Error al cargar vendedores');
+  }
+}
+
+function editVendedor(v) {
+  document.getElementById('modalTitle').textContent = 'Editar Vendedor';
+  document.getElementById('id_vendedor').value = v.id_vendedor;
+  document.getElementById('id_usuario').value = v.id_usuario;
+  document.getElementById('zona').value = v.zona;
+  new bootstrap.Modal('#modalVendedor').show();
+}
+
+async function deleteVendedor(id) {
+  if (!confirm('¿Eliminar este vendedor?')) return;
+  
+  const fd = new FormData();
+  fd.append('action', 'delete');
+  fd.append('id_vendedor', id);
+  
+  try {
+    const res = await fetch('ajax/vendedores.php', {method: 'POST', body: fd});
+    const j = await res.json();
+    showAlert(j.success ? 'success' : 'danger', j.success ? '✅ ' + j.message : '❌ ' + j.message);
+    if (j.success) loadVendedores();
+  } catch (err) {
+    showAlert('danger', '❌ Error al eliminar');
+  }
+}
+
+document.getElementById('formVendedor').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const isEdit = fd.get('id_vendedor');
+  fd.append('action', isEdit ? 'update' : 'create');
+  
+  try {
+    const res = await fetch('ajax/vendedores.php', {method: 'POST', body: fd});
+    const j = await res.json();
+    showAlert(j.success ? 'success' : 'danger', j.success ? '✅ ' + j.message : '❌ ' + j.message);
+    
+    if (j.success) {
+      bootstrap.Modal.getInstance('#modalVendedor').hide();
+      e.target.reset();
+      document.getElementById('modalTitle').textContent = 'Nuevo Vendedor';
+      loadVendedores();
+    }
+  } catch (err) {
+    showAlert('danger', '❌ Error al guardar');
+  }
+});
+
+document.getElementById('modalVendedor').addEventListener('hidden.bs.modal', function() {
+  document.getElementById('formVendedor').reset();
+  document.getElementById('modalTitle').textContent = 'Nuevo Vendedor';
+});
+
+window.addEventListener('load', () => {
+  loadUsuarios();
+  loadVendedores();
+});
+</script>
 
 <?php include 'includes/footer.php'; ?>

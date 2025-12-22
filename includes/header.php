@@ -84,6 +84,7 @@ if (!isset($_SESSION['nombre'])) {
     <a href="categorias.php"><i class="bi bi-bookmark"></i> Categorias</a>
     <a href="proveedores.php"><i class="bi bi-people"></i> Proveedores</a>
     <a href="vendedores.php"><i class="bi bi-truck"></i> Vendedores</a>
+    <a href="promociones.php"><i class="bi bi-megaphone"></i> Promociones</a>
 
   <?php endif; ?>
 

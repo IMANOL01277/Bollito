@@ -457,6 +457,157 @@ window.addEventListener('load', () => {
   loadProductos();
   setInterval(checkLowStock, 30000); // Verificar cada 30 segundos
 });
+
+// Agregar esto al script existente de inventario.php
+
+// Cargar promociones activas
+async function loadPromocionesActivas() {
+  try {
+    const res = await fetch('ajax/promociones.php?action=activas');
+    const data = await res.json();
+    
+    if (data.success && data.promociones_activas && data.promociones_activas.length > 0) {
+      // Crear alerta de promociones
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-warning alert-dismissible fade show';
+      alertDiv.style.animation = 'slideInRight 0.5s ease-out';
+      alertDiv.innerHTML = `
+        <strong><i class="bi bi-tag-fill me-2"></i>¡Productos en promoción!</strong><br>
+        <ul class="mb-0 mt-2">
+          ${data.promociones_activas.map(p => {
+            const ahorro = (parseFloat(p.precio_original) - parseFloat(p.precio_promocion)).toFixed(2);
+            return `<li>
+              <strong>${p.producto}</strong>: 
+              <del class="text-muted">$${parseFloat(p.precio_original).toFixed(2)}</del> 
+              → <span class="text-danger fw-bold">$${parseFloat(p.precio_promocion).toFixed(2)}</span>
+              (${p.descuento}% OFF - Ahorra $${ahorro})
+              <small class="text-muted">- Hasta ${new Date(p.fecha_fin).toLocaleDateString('es-CO')}</small>
+            </li>`;
+          }).join('')}
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      
+      // Insertar antes de la tabla
+      const container = document.querySelector('.card-style');
+      const alerts = document.getElementById('alerts');
+      if (alerts.childNodes.length === 0) {
+        alerts.appendChild(alertDiv);
+      }
+    }
+  } catch (err) {
+    console.error('Error cargando promociones:', err);
+  }
+}
+
+// Modificar la función loadProductos para mostrar badge de promoción
+async function loadProductosConPromociones() {
+  try {
+    const [resProductos, resPromociones] = await Promise.all([
+      fetch('ajax/productos.php?action=list'),
+      fetch('ajax/promociones.php?action=activas')
+    ]);
+    
+    const dataProductos = await resProductos.json();
+    const dataPromociones = await resPromociones.json();
+    
+    const tbody = document.getElementById('productosBody');
+    tbody.innerHTML = '';
+    
+    if (!dataProductos.success) {
+      showAlert(alertsContainer, 'danger', dataProductos.message);
+      return;
+    }
+    
+    // Crear mapa de promociones por id_producto
+    const promocionesMap = new Map();
+    if (dataPromociones.success && dataPromociones.promociones_activas) {
+      dataPromociones.promociones_activas.forEach(p => {
+        promocionesMap.set(parseInt(p.id_producto), p);
+      });
+    }
+    
+    dataProductos.products.forEach((p, i) => {
+      const compra = parseFloat(p.precio_compra);
+      const venta = parseFloat(p.precio_venta);
+      const margen = compra > 0 ? ((venta - compra) / compra * 100).toFixed(0) : 0;
+      const ganancia = (venta - compra).toFixed(2);
+      
+      let stockClass = 'stock-ok';
+      let stockIcon = '✅';
+      if (p.stock === 0 || p.stock === '0') {
+        stockClass = 'stock-danger';
+        stockIcon = '❌';
+      } else if (p.stock <= 10) {
+        stockClass = 'stock-warning';
+        stockIcon = '⚠️';
+      }
+      
+      // Verificar si tiene promoción activa
+      const promo = promocionesMap.get(parseInt(p.id_producto));
+      let promoHTML = '';
+      let precioDisplay = `$${venta.toFixed(2)}`;
+      
+      if (promo) {
+        const precioPromo = parseFloat(promo.precio_promocion);
+        promoHTML = `<span class="badge bg-danger ms-2 animate-pulse" style="animation: pulse 1.5s infinite;">
+          🏷️ ${promo.descuento}% OFF
+        </span>`;
+        precioDisplay = `<del class="text-muted">$${venta.toFixed(2)}</del> 
+          <strong class="text-danger">$${precioPromo.toFixed(2)}</strong>`;
+      }
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td><strong>${p.nombre}</strong>${promoHTML}</td>
+        <td>${p.categoria ?? '-'}</td>
+        <td>${p.proveedor ?? '-'}</td>
+        <td>$${compra.toFixed(2)}</td>
+        <td>${precioDisplay}</td>
+        <td><span class="profit-badge">+${margen}% ($${ganancia})</span></td>
+        <td><span class="stock-badge ${stockClass}">${stockIcon} ${p.stock}</span></td>
+        <td>
+          <button class="btn btn-sm btn-primary btn-action btn-edit" data-id="${p.id_producto}" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-danger btn-action btn-delete" data-id="${p.id_producto}" title="Eliminar">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    
+    document.querySelectorAll('.btn-edit').forEach(b => b.onclick = onEditClick);
+    document.querySelectorAll('.btn-delete').forEach(b => b.onclick = onDeleteClick);
+    
+    checkLowStock();
+  } catch (err) {
+    console.error('Error:', err);
+    showAlert(alertsContainer, 'danger', 'Error al cargar productos');
+  }
+}
+
+// CSS para la animación del badge
+const style = document.createElement('style');
+style.textContent = `
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+`;
+document.head.appendChild(style);
+
+// Al cargar la página, usar la nueva función
+window.addEventListener('load', () => {
+  loadSelects();
+  loadProductosConPromociones();
+  loadPromocionesActivas();
+  setInterval(checkLowStock, 30000);
+});
 </script>
 
 <?php include("includes/footer.php"); ?>
