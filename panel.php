@@ -166,17 +166,6 @@
   </div>
 
   <div class="col-md-3">
-    <a href="promociones.php" class="card-link">
-      <div class="dashboard-card red" style="animation-delay: 0.4s;">
-        <i class="bi bi-tag-fill card-icon text-danger"></i>
-        <h5 class="card-title">Promociones</h5>
-        <p class="text-muted small">Descuentos y ofertas</p>
-        <button class="btn btn-outline-danger btn-sm mt-2">Ver Promociones</button>
-      </div>
-    </a>
-  </div>
-
-  <div class="col-md-3">
     <a href="devoluciones.php" class="card-link">
       <div class="dashboard-card pink" style="animation-delay: 0.5s;">
         <i class="bi bi-arrow-return-left card-icon" style="color: #ec4899;"></i>
@@ -233,6 +222,17 @@
   </div>
   <?php endif; ?>
 </div>
+
+<div class="col-md-3">
+    <a href="promociones.php" class="card-link">
+      <div class="dashboard-card red" style="animation-delay: 0.4s;">
+        <i class="bi bi-tag-fill card-icon text-danger"></i>
+        <h5 class="card-title">Promociones</h5>
+        <p class="text-muted small">Descuentos y ofertas</p>
+        <button class="btn btn-outline-danger btn-sm mt-2">Ver Promociones</button>
+      </div>
+    </a>
+  </div>
 
 <script>
 async function loadDashboardStats() {
