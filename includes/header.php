@@ -441,7 +441,7 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
   <div class="sidebar-header">
     <div class="logo-container">
       <div class="logo-icon">
-        <img src="/img/logo_mibollito.png" alt="">
+        <img src="/img/logo_mibollito.png" alt="" height="20px" width="20px">
       </div>
       <h4>Mi Bollito</h4>
       <p>Sistema de Gestión</p>
