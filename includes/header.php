@@ -85,6 +85,8 @@ if (!isset($_SESSION['nombre'])) {
     <a href="proveedores.php"><i class="bi bi-people"></i> Proveedores</a>
     <a href="vendedores.php"><i class="bi bi-truck"></i> Vendedores</a>
     <a href="promociones.php"><i class="bi bi-megaphone"></i> Promociones</a>
+    <a href="promociones.php"><i class="bi bi-arrow-return-left"></i> Devoluciones</a>
+
 
   <?php endif; ?>
 
