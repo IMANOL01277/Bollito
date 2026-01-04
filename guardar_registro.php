@@ -42,7 +42,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     // ======== INSERTAR USUARIO ========
-    $insert_query = "INSERT INTO usuarios (nombre, correo, contraseña) VALUES ($1, $2, $3)";
+    // NOTA: la columna en BD es 'contrasena' sin ñ
+    $insert_query = "INSERT INTO usuarios (nombre, correo, contrasena) VALUES ($1, $2, $3)";
     $result = pg_query_params($conn, $insert_query, [$nombre, $correo, $contraseña_hash]);
 
     if ($result) {
