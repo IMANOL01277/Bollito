@@ -1,9 +1,9 @@
 <?php
 // Conexión a PostgreSQL
-$host = getenv('DB_HOST') ?: 'aws-0-us-west-2.pooler.supabase.com';
+$host = getenv('DB_HOST') ?: 'aws-1-us-east-1.pooler.supabase.com';
 $port = getenv('DB_PORT') ?: '5432';
 $dbname = getenv('DB_NAME') ?: 'postgres';
-$user = getenv('DB_USER') ?: 'postgres.euiryuputhuogihjldnc';
+$user = getenv('DB_USER') ?: 'postgres.jpbshyiucotaeznpgaib';
 $password = getenv('DB_PASSWORD') ?: '10654823bollito';
 
 try {

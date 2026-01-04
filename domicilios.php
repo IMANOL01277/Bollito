@@ -74,8 +74,6 @@ $result = pg_query($conn, "SELECT * FROM domicilios ORDER BY fecha_registro DESC
 $productos = pg_query($conn, "SELECT id_producto, nombre, stock, precio_venta, precio_compra FROM productos WHERE stock > 0 ORDER BY nombre ASC");
 
 include 'includes/header.php';
-
-
 ?>
 
 <style>

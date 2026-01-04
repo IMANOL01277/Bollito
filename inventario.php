@@ -1,7 +1,6 @@
 <?php include("includes/header.php"); ?>
 <?php require 'conexion.php'; ?>
 
-
 <style>
 .card-style {
   background: white;

@@ -1,7 +1,6 @@
 <?php
 include("includes/header.php");
 include("conexion.php");
-
 ?>
 
 <style>

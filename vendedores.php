@@ -1,6 +1,12 @@
 <?php
 include 'includes/header.php';
 include 'conexion.php';
+
+if ($_SESSION['rol'] !== 'administrador') {
+    echo "<div class='alert alert-danger m-4'>❌ No tienes permiso para acceder a esta sección.</div>";
+    include 'includes/footer.php';
+    exit();
+}
 ?>
 
 <style>

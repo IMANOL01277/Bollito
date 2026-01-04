@@ -1,5 +1,10 @@
 <?php
 include("includes/header.php");
+if ($_SESSION['rol'] !== 'administrador') {
+  echo "<div class='alert alert-danger mt-4'>🚫 No tienes permisos para acceder aquí.</div>";
+  include("includes/footer.php");
+  exit();
+}
 ?>
 
 <style>

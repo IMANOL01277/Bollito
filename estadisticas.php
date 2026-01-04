@@ -1,8 +1,4 @@
-<?php include("includes/header.php");
-require_once("includes/Permisos.php");
-
-
-?>
+<?php include("includes/header.php"); ?>
 
 <style>
 .stats-card {
