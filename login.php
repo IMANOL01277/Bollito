@@ -183,6 +183,9 @@
     <button type="submit" class="btn btn-login btn-primary w-100 text-white">
       <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión
     </button>
+    <a href="registro.php" class="btn btn-register w-100 text-white">
+    <i class="bi bi-person-plus me-2"></i>Crear nueva cuenta
+  </a>
   </form>
 
   <div class="text-center mt-4">
