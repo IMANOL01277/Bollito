@@ -2,10 +2,9 @@
 include("includes/header.php");
 include("conexion.php");
 
-if ($_SESSION['rol'] != 'administrador') {
-    header("Location: panel.php");
-    exit();
-}
+require_once("includes/Permisos.php");
+
+requiere_permiso('promociones.ver');
 ?>
 
 <style>
