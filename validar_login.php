@@ -3,7 +3,7 @@ include("conexion.php");
 session_start();
 
 $correo = pg_escape($conn, $_POST['correo']);
-$contraseña = $_POST['contraseña'];
+$contrasena = $_POST['contrasena'];
 
 $query = "SELECT * FROM usuarios WHERE correo = $1";
 $result = pg_query_params($conn, $query, [$correo]);
@@ -11,7 +11,7 @@ $result = pg_query_params($conn, $query, [$correo]);
 if (pg_num_rows($result) > 0) {
     $usuario = pg_fetch_assoc($result);
 
-    if (password_verify($contraseña, $usuario['contraseña'])) {
+    if (password_verify($contrasena, $usuario['contrasena'])) {
         $_SESSION['nombre'] = $usuario['nombre'];
         $_SESSION['correo'] = $usuario['correo'];
         $_SESSION['rol'] = $usuario['rol'];
@@ -24,4 +24,5 @@ if (pg_num_rows($result) > 0) {
 }
 
 pg_close($conn);
+
 ?>
