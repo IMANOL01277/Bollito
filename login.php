@@ -114,6 +114,20 @@
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
     }
+    .btn-register {
+      background: linear-gradient(135deg, #11998e, #38ef7d);
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+    .btn-register:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+    }
     .alert {
       border-radius: 10px;
       animation: slideDown 0.5s ease-out;
@@ -139,6 +153,25 @@
     .input-group .form-control {
       border-left: none;
       border-radius: 0 10px 10px 0;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 1.5rem 0;
+      position: relative;
+      z-index: 1;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .divider span {
+      padding: 0 10px;
+      color: #6b7280;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -180,18 +213,23 @@
       </div>
     </div>
     
-    <button type="submit" class="btn btn-login btn-primary w-100 text-white">
+    <button type="submit" class="btn btn-login btn-primary w-100 text-white mb-3">
       <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión
     </button>
-    <a href="registro.php" class="btn btn-register w-100 text-white">
+  </form>
+
+  <div class="divider">
+    <span>o</span>
+  </div>
+
+  <a href="registro.php" class="btn btn-register w-100 text-white">
     <i class="bi bi-person-plus me-2"></i>Crear nueva cuenta
   </a>
-  </form>
 
   <div class="text-center mt-4">
     <p class="text-muted small mb-0">
-      <i class="bi bi-info-circle me-1"></i>
-      Si necesitas una cuenta, contacta al administrador
+      <i class="bi bi-shield-check me-1"></i>
+      Sistema seguro de gestión empresarial
     </p>
   </div>
 </div>
