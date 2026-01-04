@@ -1,10 +1,6 @@
 <?php
 include 'includes/header.php';
 include 'conexion.php';
-
-require_once("includes/Permisos.php");
-
-requiere_permiso('vendedores.ver');
 ?>
 
 <style>

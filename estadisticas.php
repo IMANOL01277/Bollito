@@ -1,7 +1,7 @@
 <?php include("includes/header.php");
 require_once("includes/Permisos.php");
 
-requiere_permiso('estadisticas.ver');
+
 ?>
 
 <style>

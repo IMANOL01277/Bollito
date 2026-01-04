@@ -75,9 +75,7 @@ $productos = pg_query($conn, "SELECT id_producto, nombre, stock, precio_venta, p
 
 include 'includes/header.php';
 
-require_once("includes/Permisos.php");
 
-requiere_permiso('domicilios.ver');
 ?>
 
 <style>

@@ -1,8 +1,6 @@
 <?php include("includes/header.php"); ?>
 <?php require 'conexion.php'; ?>
-<?php require_once("includes/Permisos.php");
 
-requiere_permiso('inventario.ver'); ?>
 
 <style>
 .card-style {

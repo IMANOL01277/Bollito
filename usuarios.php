@@ -1,8 +1,5 @@
 <?php
 include("includes/header.php");
-require_once("includes/Permisos.php");
-
-requiere_permiso('usuarios.ver');
 ?>
 
 <style>

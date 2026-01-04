@@ -1,9 +1,6 @@
 <?php
 include("includes/header.php");
 include("conexion.php");
-require_once("includes/Permisos.php");
-
-requiere_permiso('reportes.ver');
 
 if ($_SESSION['rol'] != 'administrador') {
     header("Location: panel.php");
