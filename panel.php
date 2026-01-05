@@ -176,6 +176,17 @@
     </a>
   </div>
 
+  <div class="col-md-3">
+    <a href="devoluciones.php" class="card-link">
+      <div class="dashboard-card pink" style="animation-delay: 0.5s;">
+        <i class="bi bi-clipboard-data" style="color: #ec4899;"></i>
+        <h5 class="card-title">Reportes</h5>
+        <p class="text-muted small">Gestión de reportes</p>
+        <button class="btn btn-outline-danger btn-sm mt-2" style="border-color: #ec4899; color: #ec4899;">Gestionar</button>
+      </div>
+    </a>
+  </div>
+
   <?php if ($_SESSION['rol'] === 'administrador'): ?>
   <div class="col-md-3">
     <a href="usuarios.php" class="card-link">
@@ -256,5 +267,6 @@ async function loadDashboardStats() {
 
 window.addEventListener('load', loadDashboardStats);
 </script>
+
 
 <?php include("includes/footer.php"); ?>
