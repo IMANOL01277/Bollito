@@ -178,7 +178,7 @@
 
   <div class="col-md-3">
     <a href="vendedores.php" class="card-link">
-      <div class="dashboard-card indigo" style="animation-delay: 0.9s;">
+      <div class="dashboard-card blue" style="animation-delay: 0.5s;">
         <i class="bi bi-clipboard-data" style="color: #6366f1;"></i>
         <h5 class="card-title">Reportes</h5>
         <p class="text-muted small">Generar Reportes</p>
@@ -270,4 +270,5 @@ window.addEventListener('load', loadDashboardStats);
 
 
 <?php include("includes/footer.php"); ?>
+
 
