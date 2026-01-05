@@ -472,6 +472,11 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
       <span>Devoluciones</span>
     </a>
 
+    <a href="reportes.php" class="nav-link-custom <?= $current_page === 'devoluciones' ? 'active' : '' ?>">
+      <i class="bi bi-clipboard-data"></i>
+      <span>Reportes</span>
+    </a>
+
     <?php if ($_SESSION['rol'] === 'administrador'): ?>
     <div class="nav-section-title">Administración</div>
     <a href="usuarios.php" class="nav-link-custom <?= $current_page === 'usuarios' ? 'active' : '' ?>">
@@ -521,4 +526,5 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
 </div>
 
 <!-- Content Area -->
+
 <div class="content" id="content">
