@@ -20,37 +20,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'create') {
     $producto_data = pg_fetch_assoc($producto_q);
 
     if ($producto_data && $cantidad > 0) {
-        // Verificar stock disponible
+        // Verificar stock disponible ANTES de cualquier operación
         if ($producto_data['stock'] < $cantidad) {
             header("Location: domicilios.php?msg=insufficient_stock");
             exit();
         }
-        
+
         $nombre_producto = $producto_data['nombre'];
-        $precio_venta = $producto_data['precio_venta'];
-        $precio_compra = $producto_data['precio_compra'];
-        $total_venta = $precio_venta * $cantidad;
-        $ganancia = ($precio_venta - $precio_compra) * $cantidad;
+        $precio_venta    = $producto_data['precio_venta'];
+        $precio_compra   = $producto_data['precio_compra'];
+        $total_venta     = $precio_venta * $cantidad;
+        $ganancia        = ($precio_venta - $precio_compra) * $cantidad;
 
-        // Registrar el domicilio
-        $sql = "INSERT INTO domicilios (conductor_responsable, matricula_vehiculo, observaciones, producto) 
-                VALUES ($1, $2, $3, $4)";
-        $result = pg_query_params($conn, $sql, [$conductor, $matricula, $observaciones, $nombre_producto]);
-        $ok = !!$result;
+        // Iniciar transacción — todo o nada
+        pg_query($conn, "BEGIN");
 
-        if ($ok) {
-            // Descontar stock
-            pg_query_params($conn, "UPDATE productos SET stock = stock - $1 WHERE id_producto = $2", [$cantidad, $id_producto]);
+        // 1. Descontar stock primero (el trigger validará aquí)
+        // Suprimir warning de PHP con @ para capturarlo manualmente
+        $result_stock = @pg_query_params($conn, "UPDATE productos SET stock = stock - $1 WHERE id_producto = $2", [$cantidad, $id_producto]);
 
-            // Registrar movimiento con precio de venta (para calcular ganancia correctamente)
-            $desc = "Domicilio entregado por $conductor - Venta: $$total_venta - Ganancia: $$ganancia";
-            $mov = "INSERT INTO movimientos_inventario (id_producto, tipo, cantidad, precio_unitario, descripcion)
-                    VALUES ($1, 'salida', $2, $3, $4)";
-            pg_query_params($conn, $mov, [$id_producto, $cantidad, $precio_compra, $desc]);
+        if (!$result_stock) {
+            pg_query($conn, "ROLLBACK");
+            header("Location: domicilios.php?msg=insufficient_stock");
+            exit();
         }
 
-        header("Location: domicilios.php?msg=" . ($ok ? "created" : "error"));
+        // 2. Registrar el domicilio
+        $sql = "INSERT INTO domicilios (conductor_responsable, matricula_vehiculo, observaciones, producto)
+                VALUES ($1, $2, $3, $4)";
+        $result_dom = @pg_query_params($conn, $sql, [$conductor, $matricula, $observaciones, $nombre_producto]);
+
+        if (!$result_dom) {
+            pg_query($conn, "ROLLBACK");
+            header("Location: domicilios.php?msg=error");
+            exit();
+        }
+
+        // 3. Registrar movimiento de salida
+        $desc = "Domicilio entregado por $conductor - Venta: $$total_venta - Ganancia: $$ganancia";
+        $mov  = "INSERT INTO movimientos_inventario (id_producto, tipo, cantidad, precio_unitario, descripcion)
+                 VALUES ($1, 'salida', $2, $3, $4)";
+        @pg_query_params($conn, $mov, [$id_producto, $cantidad, $precio_compra, $desc]);
+
+        pg_query($conn, "COMMIT");
+        header("Location: domicilios.php?msg=created");
         exit();
+
     } else {
         header("Location: domicilios.php?msg=invalid");
         exit();
@@ -59,18 +74,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'create') {
 
 // === ELIMINAR DOMICILIO ===
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'delete') {
-    $id = (int) $_POST['id_domicilio'];
+    $id     = (int) $_POST['id_domicilio'];
     $result = pg_query_params($conn, "DELETE FROM domicilios WHERE id_domicilio = $1", [$id]);
-    $ok = !!$result;
+    $ok     = !!$result;
 
     header("Location: domicilios.php?msg=" . ($ok ? "deleted" : "error"));
     exit();
 }
 
 // === CONSULTA PRINCIPAL ===
-$result = pg_query($conn, "SELECT * FROM domicilios ORDER BY fecha_registro DESC");
-
-// === CARGAR PRODUCTOS ===
+$result   = pg_query($conn, "SELECT * FROM domicilios ORDER BY fecha_registro DESC");
 $productos = pg_query($conn, "SELECT id_producto, nombre, stock, precio_venta, precio_compra FROM productos WHERE stock > 0 ORDER BY nombre ASC");
 
 include 'includes/header.php';
@@ -123,11 +136,11 @@ include 'includes/header.php';
       <div class="alert alert-<?= in_array($_GET['msg'], ['error','invalid','insufficient_stock']) ? 'danger' : 'success' ?> alert-dismissible fade show" role="alert">
         <?php
           switch($_GET['msg']) {
-            case 'created': echo '✅ Domicilio registrado correctamente.'; break;
-            case 'deleted': echo '🗑️ Domicilio eliminado.'; break;
-            case 'invalid': echo '⚠️ Producto inválido o cantidad incorrecta.'; break;
+            case 'created':            echo '✅ Domicilio registrado correctamente.'; break;
+            case 'deleted':            echo '🗑️ Domicilio eliminado.'; break;
+            case 'invalid':            echo '⚠️ Producto inválido o cantidad incorrecta.'; break;
             case 'insufficient_stock': echo '❌ Stock insuficiente para realizar el domicilio.'; break;
-            default: echo '❌ Error al procesar la operación.';
+            default:                   echo '❌ Error al procesar la operación.';
           }
         ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -199,11 +212,11 @@ include 'includes/header.php';
             <select name="id_producto" id="selectProducto" class="form-select" required onchange="updateProductInfo()">
               <option value="">Seleccione un producto</option>
               <?php while($p = pg_fetch_assoc($productos)): ?>
-                <option value="<?= $p['id_producto'] ?>" 
+                <option value="<?= $p['id_producto'] ?>"
                         data-stock="<?= $p['stock'] ?>"
                         data-precio-venta="<?= $p['precio_venta'] ?>"
                         data-precio-compra="<?= $p['precio_compra'] ?>">
-                  <?= htmlspecialchars($p['nombre']) ?> - Stock: <?= $p['stock'] ?> - $<?= number_format($p['precio_venta'], 2) ?>
+                  <?= htmlspecialchars($p['nombre']) ?> — Stock: <?= $p['stock'] ?> — $<?= number_format($p['precio_venta'], 2) ?>
                 </option>
               <?php endwhile; ?>
             </select>
@@ -212,7 +225,7 @@ include 'includes/header.php';
             <label class="form-label fw-semibold"><i class="bi bi-hash me-2"></i>Cantidad</label>
             <input type="number" name="cantidad" id="cantidad" class="form-control" min="1" required onchange="updateProductInfo()">
           </div>
-          
+
           <!-- Info del producto -->
           <div class="col-12" id="productInfo" style="display:none;">
             <div class="alert alert-info mb-0">
@@ -223,7 +236,7 @@ include 'includes/header.php';
               </div>
             </div>
           </div>
-          
+
           <div class="col-12">
             <label class="form-label fw-semibold"><i class="bi bi-chat-dots me-2"></i>Observaciones</label>
             <textarea name="observaciones" class="form-control" rows="3" placeholder="Detalles adicionales del domicilio..."></textarea>
@@ -242,26 +255,26 @@ include 'includes/header.php';
 
 <script>
 function updateProductInfo() {
-  const select = document.getElementById('selectProducto');
+  const select   = document.getElementById('selectProducto');
   const cantidad = parseInt(document.getElementById('cantidad').value) || 0;
-  const option = select.options[select.selectedIndex];
-  
+  const option   = select.options[select.selectedIndex];
+
   if (option.value && cantidad > 0) {
-    const stock = parseInt(option.dataset.stock);
+    const stock       = parseInt(option.dataset.stock);
     const precioVenta = parseFloat(option.dataset.precioVenta);
-    const precioCompra = parseFloat(option.dataset.precioCompra);
-    
+    const precioCompra= parseFloat(option.dataset.precioCompra);
+
     if (cantidad > stock) {
       alert('⚠️ La cantidad solicitada excede el stock disponible (' + stock + ' unidades)');
       document.getElementById('cantidad').value = stock;
       return;
     }
-    
+
     const totalVenta = precioVenta * cantidad;
-    const ganancia = (precioVenta - precioCompra) * cantidad;
-    
+    const ganancia   = (precioVenta - precioCompra) * cantidad;
+
     document.getElementById('totalVenta').textContent = '$' + totalVenta.toLocaleString('es-CO', {minimumFractionDigits: 2});
-    document.getElementById('ganancia').textContent = '$' + ganancia.toLocaleString('es-CO', {minimumFractionDigits: 2});
+    document.getElementById('ganancia').textContent   = '$' + ganancia.toLocaleString('es-CO', {minimumFractionDigits: 2});
     document.getElementById('productInfo').style.display = 'block';
   } else {
     document.getElementById('productInfo').style.display = 'none';
@@ -270,10 +283,9 @@ function updateProductInfo() {
 
 // Auto-ocultar alertas
 setTimeout(() => {
-  const alerts = document.querySelectorAll('.alert');
-  alerts.forEach(alert => {
+  document.querySelectorAll('.alert').forEach(alert => {
     alert.style.transition = 'opacity 0.5s';
-    alert.style.opacity = '0';
+    alert.style.opacity    = '0';
     setTimeout(() => alert.remove(), 500);
   });
 }, 5000);
