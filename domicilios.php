@@ -35,9 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'create') {
         // Iniciar transacción — todo o nada
         pg_query($conn, "BEGIN");
 
-        // 1. Descontar stock primero (el trigger validará aquí)
-        // Suprimir warning de PHP con @ para capturarlo manualmente
-        $result_stock = @pg_query_params($conn, "UPDATE productos SET stock = stock - $1 WHERE id_producto = $2", [$cantidad, $id_producto]);
+        // 1. Descontar stock (el trigger de BD validará aquí si existe)
+        $result_stock = @pg_query_params($conn, 
+            "UPDATE productos SET stock = stock - $1 WHERE id_producto = $2", 
+            [$cantidad, $id_producto]
+        );
 
         if (!$result_stock) {
             pg_query($conn, "ROLLBACK");
@@ -45,22 +47,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'create') {
             exit();
         }
 
-        // 2. Registrar el domicilio
-        $sql = "INSERT INTO domicilios (conductor_responsable, matricula_vehiculo, observaciones, producto)
-                VALUES ($1, $2, $3, $4)";
-        $result_dom = @pg_query_params($conn, $sql, [$conductor, $matricula, $observaciones, $nombre_producto]);
+        // 2. Registrar movimiento de SALIDA con precio_venta
+        // Esto es lo que aparece en estadísticas como "ingreso"
+        $desc = "Domicilio - Conductor: $conductor | Venta: $" . number_format($total_venta, 2) . " | Ganancia: $" . number_format($ganancia, 2);
+        $result_mov = pg_query_params($conn,
+            "INSERT INTO movimientos_inventario (id_producto, tipo, cantidad, precio_unitario, descripcion)
+             VALUES ($1, 'salida', $2, $3, $4)",
+            [$id_producto, $cantidad, $precio_venta, $desc]
+        );
+
+        if (!$result_mov) {
+            pg_query($conn, "ROLLBACK");
+            header("Location: domicilios.php?msg=error");
+            exit();
+        }
+
+        // 3. Registrar el domicilio
+        $result_dom = pg_query_params($conn,
+            "INSERT INTO domicilios (conductor_responsable, matricula_vehiculo, observaciones, producto)
+             VALUES ($1, $2, $3, $4)",
+            [$conductor, $matricula, $observaciones, $nombre_producto]
+        );
 
         if (!$result_dom) {
             pg_query($conn, "ROLLBACK");
             header("Location: domicilios.php?msg=error");
             exit();
         }
-
-        // 3. Registrar movimiento de salida
-        $desc = "Domicilio entregado por $conductor - Venta: $$total_venta - Ganancia: $$ganancia";
-        $mov  = "INSERT INTO movimientos_inventario (id_producto, tipo, cantidad, precio_unitario, descripcion)
-                 VALUES ($1, 'salida', $2, $3, $4)";
-        @pg_query_params($conn, $mov, [$id_producto, $cantidad, $precio_compra, $desc]);
 
         pg_query($conn, "COMMIT");
         header("Location: domicilios.php?msg=created");
