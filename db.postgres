@@ -1,0 +1,186 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.categorias (
+  id_categoria integer NOT NULL DEFAULT nextval('categorias_id_categoria_seq'::regclass),
+  nombre character varying NOT NULL UNIQUE,
+  descripcion text,
+  activa boolean DEFAULT true,
+  fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT categorias_pkey PRIMARY KEY (id_categoria)
+);
+CREATE TABLE public.devoluciones (
+  id_devolucion integer NOT NULL DEFAULT nextval('devoluciones_id_devolucion_seq'::regclass),
+  id_producto integer,
+  cantidad integer NOT NULL CHECK (cantidad > 0),
+  motivo character varying NOT NULL,
+  observaciones text,
+  precio_unitario numeric NOT NULL,
+  id_usuario integer,
+  fecha_devolucion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT devoluciones_pkey PRIMARY KEY (id_devolucion),
+  CONSTRAINT devoluciones_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id_producto),
+  CONSTRAINT devoluciones_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario)
+);
+CREATE TABLE public.domicilios (
+  id_domicilio integer NOT NULL DEFAULT nextval('domicilios_id_domicilio_seq'::regclass),
+  conductor_responsable character varying NOT NULL,
+  matricula_vehiculo character varying NOT NULL,
+  producto character varying NOT NULL,
+  observaciones text,
+  estado character varying DEFAULT 'pendiente'::character varying CHECK (estado::text = ANY (ARRAY['pendiente'::character varying, 'en_ruta'::character varying, 'entregado'::character varying, 'cancelado'::character varying]::text[])),
+  fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT domicilios_pkey PRIMARY KEY (id_domicilio)
+);
+CREATE TABLE public.log_permisos (
+  id_log integer NOT NULL DEFAULT nextval('log_permisos_id_log_seq'::regclass),
+  id_usuario_afectado integer,
+  id_usuario_ejecutor integer,
+  id_permiso integer,
+  id_rol integer,
+  accion character varying CHECK (accion::text = ANY (ARRAY['otorgar'::character varying, 'revocar'::character varying, 'modificar'::character varying]::text[])),
+  tipo character varying CHECK (tipo::text = ANY (ARRAY['rol'::character varying, 'usuario'::character varying, 'permiso'::character varying]::text[])),
+  motivo text,
+  ip_address character varying,
+  fecha_cambio timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT log_permisos_pkey PRIMARY KEY (id_log),
+  CONSTRAINT log_permisos_id_usuario_afectado_fkey FOREIGN KEY (id_usuario_afectado) REFERENCES public.usuarios(id_usuario),
+  CONSTRAINT log_permisos_id_usuario_ejecutor_fkey FOREIGN KEY (id_usuario_ejecutor) REFERENCES public.usuarios(id_usuario),
+  CONSTRAINT log_permisos_id_permiso_fkey FOREIGN KEY (id_permiso) REFERENCES public.permisos(id_permiso),
+  CONSTRAINT log_permisos_id_rol_fkey FOREIGN KEY (id_rol) REFERENCES public.roles(id_rol)
+);
+CREATE TABLE public.modulos (
+  id_modulo integer NOT NULL DEFAULT nextval('modulos_id_modulo_seq'::regclass),
+  nombre character varying NOT NULL UNIQUE,
+  descripcion text,
+  icono character varying DEFAULT 'bi-folder'::character varying,
+  url character varying,
+  orden integer DEFAULT 0,
+  activo boolean DEFAULT true,
+  fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT modulos_pkey PRIMARY KEY (id_modulo)
+);
+CREATE TABLE public.movimientos_inventario (
+  id_movimiento integer NOT NULL DEFAULT nextval('movimientos_inventario_id_movimiento_seq'::regclass),
+  id_producto integer,
+  tipo character varying NOT NULL CHECK (tipo::text = ANY (ARRAY['entrada'::character varying, 'salida'::character varying]::text[])),
+  cantidad integer NOT NULL CHECK (cantidad > 0),
+  precio_unitario numeric NOT NULL DEFAULT 0.00,
+  descripcion text,
+  id_usuario integer,
+  fecha_movimiento timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT movimientos_inventario_pkey PRIMARY KEY (id_movimiento),
+  CONSTRAINT movimientos_inventario_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id_producto),
+  CONSTRAINT movimientos_inventario_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario)
+);
+CREATE TABLE public.permisos (
+  id_permiso integer NOT NULL DEFAULT nextval('permisos_id_permiso_seq'::regclass),
+  id_modulo integer,
+  nombre character varying NOT NULL,
+  clave character varying NOT NULL UNIQUE,
+  descripcion text,
+  tipo character varying DEFAULT 'leer'::character varying CHECK (tipo::text = ANY (ARRAY['crear'::character varying, 'leer'::character varying, 'actualizar'::character varying, 'eliminar'::character varying, 'especial'::character varying]::text[])),
+  activo boolean DEFAULT true,
+  fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT permisos_pkey PRIMARY KEY (id_permiso),
+  CONSTRAINT permisos_id_modulo_fkey FOREIGN KEY (id_modulo) REFERENCES public.modulos(id_modulo)
+);
+CREATE TABLE public.productos (
+  id_producto integer NOT NULL DEFAULT nextval('productos_id_producto_seq'::regclass),
+  nombre character varying NOT NULL,
+  descripcion text,
+  precio_compra numeric NOT NULL DEFAULT 0.00,
+  precio_venta numeric NOT NULL DEFAULT 0.00,
+  stock integer NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  stock_minimo integer DEFAULT 10,
+  id_categoria integer,
+  id_proveedor integer,
+  activo boolean DEFAULT true,
+  fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT productos_pkey PRIMARY KEY (id_producto),
+  CONSTRAINT productos_id_categoria_fkey FOREIGN KEY (id_categoria) REFERENCES public.categorias(id_categoria),
+  CONSTRAINT productos_id_proveedor_fkey FOREIGN KEY (id_proveedor) REFERENCES public.proveedores(id_proveedor)
+);
+CREATE TABLE public.promociones (
+  id_promocion integer NOT NULL DEFAULT nextval('promociones_id_promocion_seq'::regclass),
+  id_producto integer,
+  descuento numeric NOT NULL CHECK (descuento > 0::numeric AND descuento < 100::numeric),
+  fecha_inicio date NOT NULL,
+  fecha_fin date NOT NULL,
+  activa boolean DEFAULT true,
+  fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT promociones_pkey PRIMARY KEY (id_promocion),
+  CONSTRAINT promociones_id_producto_fkey FOREIGN KEY (id_producto) REFERENCES public.productos(id_producto)
+);
+CREATE TABLE public.proveedores (
+  id_proveedor integer NOT NULL DEFAULT nextval('proveedores_id_proveedor_seq'::regclass),
+  nombre character varying NOT NULL,
+  contacto character varying,
+  telefono character varying,
+  correo character varying,
+  direccion text,
+  activo boolean DEFAULT true,
+  fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT proveedores_pkey PRIMARY KEY (id_proveedor)
+);
+CREATE TABLE public.roles (
+  id_rol integer NOT NULL DEFAULT nextval('roles_id_rol_seq'::regclass),
+  nombre character varying NOT NULL UNIQUE,
+  descripcion text,
+  nivel_jerarquia integer DEFAULT 100,
+  es_sistema boolean DEFAULT false,
+  activo boolean DEFAULT true,
+  fecha_creacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT roles_pkey PRIMARY KEY (id_rol)
+);
+CREATE TABLE public.roles_permisos (
+  id_rol_permiso integer NOT NULL DEFAULT nextval('roles_permisos_id_rol_permiso_seq'::regclass),
+  id_rol integer,
+  id_permiso integer,
+  otorgado boolean DEFAULT true,
+  fecha_asignacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT roles_permisos_pkey PRIMARY KEY (id_rol_permiso),
+  CONSTRAINT roles_permisos_id_rol_fkey FOREIGN KEY (id_rol) REFERENCES public.roles(id_rol),
+  CONSTRAINT roles_permisos_id_permiso_fkey FOREIGN KEY (id_permiso) REFERENCES public.permisos(id_permiso)
+);
+CREATE TABLE public.usuarios (
+  id_usuario integer NOT NULL DEFAULT nextval('usuarios_id_usuario_seq'::regclass),
+  nombre character varying NOT NULL,
+  correo character varying NOT NULL UNIQUE CHECK (correo::text ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'::text),
+  contrasena character varying NOT NULL,
+  rol character varying DEFAULT 'empleado'::character varying,
+  id_rol integer DEFAULT 2,
+  activo boolean DEFAULT true,
+  ultimo_acceso timestamp without time zone,
+  fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT usuarios_pkey PRIMARY KEY (id_usuario),
+  CONSTRAINT usuarios_id_rol_fkey FOREIGN KEY (id_rol) REFERENCES public.roles(id_rol)
+);
+CREATE TABLE public.usuarios_permisos (
+  id_usuario_permiso integer NOT NULL DEFAULT nextval('usuarios_permisos_id_usuario_permiso_seq'::regclass),
+  id_usuario integer,
+  id_permiso integer,
+  otorgado boolean DEFAULT true,
+  asignado_por integer,
+  motivo text,
+  fecha_asignacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT usuarios_permisos_pkey PRIMARY KEY (id_usuario_permiso),
+  CONSTRAINT usuarios_permisos_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario),
+  CONSTRAINT usuarios_permisos_id_permiso_fkey FOREIGN KEY (id_permiso) REFERENCES public.permisos(id_permiso),
+  CONSTRAINT usuarios_permisos_asignado_por_fkey FOREIGN KEY (asignado_por) REFERENCES public.usuarios(id_usuario)
+);
+CREATE TABLE public.vendedores_ambulantes (
+  id_vendedor integer NOT NULL DEFAULT nextval('vendedores_ambulantes_id_vendedor_seq'::regclass),
+  id_usuario integer UNIQUE,
+  zona character varying NOT NULL,
+  activo boolean DEFAULT true,
+  fecha_registro timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  fecha_modificacion timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT vendedores_ambulantes_pkey PRIMARY KEY (id_vendedor),
+  CONSTRAINT vendedores_ambulantes_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario)
+);

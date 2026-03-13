@@ -49,7 +49,8 @@ if ($action === 'proveedores') {
 
 // === VERIFICAR STOCK BAJO ===
 if ($action === 'check_stock') {
-    $result = pg_query($conn, "SELECT id_producto, nombre, stock FROM productos WHERE stock <= 10 ORDER BY stock ASC");
+    // Usar el stock mínimo configurado por producto
+    $result = pg_query($conn, "SELECT id_producto, nombre, stock, stock_minimo FROM productos WHERE stock <= stock_minimo ORDER BY stock ASC");
     $rows = [];
     while ($r = pg_fetch_assoc($result)) $rows[] = $r;
     res(true, ['low_stock' => $rows]);

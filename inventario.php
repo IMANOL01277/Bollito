@@ -254,7 +254,8 @@ async function checkLowStock() {
       html += '<ul class="mb-0 mt-2">';
       data.low_stock.forEach(p => {
         const icon = p.stock === 0 ? '🔴' : p.stock <= 5 ? '🟠' : '🟡';
-        html += `<li>${icon} <strong>${p.nombre}</strong>: Solo quedan ${p.stock} unidades</li>`;
+        const minimo = p.stock_minimo ?? 0;
+        html += `<li>${icon} <strong>${p.nombre}</strong>: Solo quedan ${p.stock} unidades (mínimo recomendado: ${minimo})</li>`;
       });
       html += '</ul>';
       html += '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
