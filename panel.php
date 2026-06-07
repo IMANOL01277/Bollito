@@ -83,7 +83,7 @@
   <div class="d-flex align-items-center justify-content-between">
     <div>
       <h2 class="mb-2">¡Bienvenido, <?= htmlspecialchars($_SESSION['nombre']) ?>! 👋</h2>
-      <p class="mb-0 opacity-75">Sistema de Gestión - Mi Bollito</p>
+      <p class="mb-0 opacity-75">Sistema de Gestión - El Sabor De Cori</p>
       <small class="opacity-75"><?= date('l, d F Y') ?></small>
     </div>
     <div class="text-end">

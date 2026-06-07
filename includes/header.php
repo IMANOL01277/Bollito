@@ -15,7 +15,7 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Bollito - Panel de Control</title>
+  <title>El Sabor De Cori - Panel de Control</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -440,7 +440,7 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
   <!-- Header -->
   <div class="sidebar-header">
     <div class="logo-container">
-      <h4>Mi Bollito</h4>
+      <h4>El Sabor De Cori</h4>
       <p>Sistema de Gestión</p>
     </div>
   </div>
