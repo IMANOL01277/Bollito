@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iniciar Sesión - Mi Bollito</title>
+  <title>Iniciar Sesión - El Sabor De Cori</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
@@ -149,7 +149,7 @@
     <div class="login-icon">
       <i class="bi bi-shop"></i>
     </div>
-    <h3 class="fw-bold mb-1">Mi Bollito</h3>
+    <h3 class="fw-bold mb-1">El Sabor De Cori</h3>
     <p class="text-muted">Sistema de Gestión</p>
   </div>
 
