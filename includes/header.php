@@ -462,6 +462,14 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
     </a>
 
     <div class="nav-section-title">Operaciones</div>
+    <a href="compras.php" class="nav-link-custom <?= $current_page === 'compras' ? 'active' : '' ?>">
+      <i class="bi bi-cart-plus-fill"></i>
+      <span>Compras</span>
+    </a>
+    <a href="ventas.php" class="nav-link-custom <?= $current_page === 'ventas' ? 'active' : '' ?>">
+      <i class="bi bi-bag-check-fill"></i>
+      <span>Ventas</span>
+    </a>
     <a href="domicilios.php" class="nav-link-custom <?= $current_page === 'domicilios' ? 'active' : '' ?>">
       <i class="bi bi-bicycle"></i>
       <span>Domicilios</span>

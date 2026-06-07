@@ -14,7 +14,7 @@ function res($ok, $data = []) {
 if ($action === 'list') {
     $query = "
         SELECT 
-            m.id_movimiento,
+            'mov_' || m.id_movimiento AS id_movimiento,
             m.id_producto,
             p.nombre AS producto,
             m.tipo,
@@ -30,12 +30,47 @@ if ($action === 'list') {
         FROM movimientos_inventario m
         LEFT JOIN productos p ON p.id_producto = m.id_producto
         WHERE m.fecha_movimiento >= CURRENT_DATE - INTERVAL '30 days'
-        ORDER BY m.fecha_movimiento DESC, m.id_movimiento DESC
+
+        UNION ALL
+
+        SELECT
+            'com_' || c.id_compra AS id_movimiento,
+            c.id_producto,
+            p.nombre AS producto,
+            'entrada'::character varying AS tipo,
+            c.cantidad,
+            c.precio_unitario,
+            (c.cantidad * c.precio_unitario) AS monto_total,
+            0::numeric AS ganancia,
+            COALESCE(c.observaciones, 'Compra registrada') AS descripcion,
+            c.fecha_compra AS fecha_movimiento
+        FROM compras c
+        LEFT JOIN productos p ON p.id_producto = c.id_producto
+        WHERE c.fecha_compra >= CURRENT_DATE - INTERVAL '30 days'
+
+        UNION ALL
+
+        SELECT
+            'ven_' || v.id_venta AS id_movimiento,
+            v.id_producto,
+            p.nombre AS producto,
+            'salida'::character varying AS tipo,
+            v.cantidad,
+            v.precio_unitario,
+            (v.cantidad * v.precio_unitario) AS monto_total,
+            v.cantidad * (v.precio_unitario - p.precio_compra) AS ganancia,
+            COALESCE(v.observaciones, 'Venta registrada') AS descripcion,
+            v.fecha_venta AS fecha_movimiento
+        FROM ventas v
+        LEFT JOIN productos p ON p.id_producto = v.id_producto
+        WHERE v.fecha_venta >= CURRENT_DATE - INTERVAL '30 days'
+
+        ORDER BY fecha_movimiento DESC
     ";
 
     $result = pg_query($conn, $query);
     if (!$result) {
-        res(false, ['message' => 'Error al obtener movimientos']);
+        res(false, ['message' => 'Error al obtener movimientos: ' . pg_last_error($conn)]);
     }
 
     $rows = [];
@@ -49,18 +84,44 @@ if ($action === 'list') {
 // Resumen financiero para estadísticas (últimos 30 días)
 if ($action === 'resumen') {
     $query = "
+        WITH combined_resumen AS (
+            SELECT
+                m.tipo,
+                m.cantidad * m.precio_unitario AS total_mov,
+                CASE WHEN m.tipo = 'salida' THEN m.cantidad * p.precio_compra ELSE 0 END AS costo_mov
+            FROM movimientos_inventario m
+            LEFT JOIN productos p ON p.id_producto = m.id_producto
+            WHERE m.fecha_movimiento >= CURRENT_DATE - INTERVAL '30 days'
+
+            UNION ALL
+
+            SELECT
+                'entrada'::character varying AS tipo,
+                c.cantidad * c.precio_unitario AS total_mov,
+                0::numeric AS costo_mov
+            FROM compras c
+            WHERE c.fecha_compra >= CURRENT_DATE - INTERVAL '30 days'
+
+            UNION ALL
+
+            SELECT
+                'salida'::character varying AS tipo,
+                v.cantidad * v.precio_unitario AS total_mov,
+                v.cantidad * p.precio_compra AS costo_mov
+            FROM ventas v
+            LEFT JOIN productos p ON p.id_producto = v.id_producto
+            WHERE v.fecha_venta >= CURRENT_DATE - INTERVAL '30 days'
+        )
         SELECT
-            COALESCE(SUM(CASE WHEN m.tipo = 'entrada' THEN m.cantidad * m.precio_unitario ELSE 0 END), 0) AS inversion,
-            COALESCE(SUM(CASE WHEN m.tipo = 'salida'  THEN m.cantidad * m.precio_unitario ELSE 0 END), 0) AS ingresos,
-            COALESCE(SUM(CASE WHEN m.tipo = 'salida'  THEN m.cantidad * p.precio_compra ELSE 0 END), 0) AS costo_ventas
-        FROM movimientos_inventario m
-        LEFT JOIN productos p ON p.id_producto = m.id_producto
-        WHERE m.fecha_movimiento >= CURRENT_DATE - INTERVAL '30 days'
+            COALESCE(SUM(CASE WHEN tipo = 'entrada' THEN total_mov ELSE 0 END), 0) AS inversion,
+            COALESCE(SUM(CASE WHEN tipo = 'salida' THEN total_mov ELSE 0 END), 0) AS ingresos,
+            COALESCE(SUM(CASE WHEN tipo = 'salida' THEN costo_mov ELSE 0 END), 0) AS costo_ventas
+        FROM combined_resumen
     ";
 
     $result = pg_query($conn, $query);
     if (!$result) {
-        res(false, ['message' => 'Error al obtener resumen']);
+        res(false, ['message' => 'Error al obtener resumen: ' . pg_last_error($conn)]);
     }
 
     $row = pg_fetch_assoc($result);

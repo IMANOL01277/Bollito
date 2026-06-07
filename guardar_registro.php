@@ -49,7 +49,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($result) {
         header("Location: login.php?mensaje=Registro exitoso, ahora puedes iniciar sesión");
     } else {
-        header("Location: registro.php?error=Error al registrar usuario");
+        $db_error = pg_last_error($conn);
+        header("Location: registro.php?error=" . urlencode("Error al registrar usuario: " . $db_error));
     }
 
     pg_close($conn);
