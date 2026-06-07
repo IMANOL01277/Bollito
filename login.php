@@ -149,7 +149,7 @@
     <div class="login-icon">
       <i class="bi bi-shop"></i>
     </div>
-    <h3 class="fw-bold mb-1">El Sabor De Cori</h3>
+    <h3 class="fw-bold mb-1">El Sabor de Cori</h3>
     <p class="text-muted">Sistema de Gestión</p>
   </div>
 
