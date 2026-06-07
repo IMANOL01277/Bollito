@@ -18,7 +18,7 @@ if($action==='create'){
   $p = password_hash($_POST['contraseña'], PASSWORD_DEFAULT);
   $rol = pg_escape($conn, $_POST['rol'] ?? 'empleado');
   
-  $query = "INSERT INTO usuarios(nombre, correo, contraseña, rol) VALUES ($1, $2, $3, $4)";
+  $query = "INSERT INTO usuarios(nombre, correo, contrasena, rol) VALUES ($1, $2, $3, $4)";
   $result = pg_query_params($conn, $query, [$n, $c, $p, $rol]);
   res(!!$result, ['message'=>'Usuario creado']);
 }
@@ -31,7 +31,7 @@ if($action==='update'){
   
   if(!empty($_POST['contraseña'])){
     $p = password_hash($_POST['contraseña'], PASSWORD_DEFAULT);
-    $query = "UPDATE usuarios SET nombre=$1, correo=$2, contraseña=$3, rol=$4 WHERE id_usuario=$5";
+    $query = "UPDATE usuarios SET nombre=$1, correo=$2, contrasena=$3, rol=$4 WHERE id_usuario=$5";
     $result = pg_query_params($conn, $query, [$n, $c, $p, $rol, $id]);
   } else {
     $query = "UPDATE usuarios SET nombre=$1, correo=$2, rol=$3 WHERE id_usuario=$4";
