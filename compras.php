@@ -65,13 +65,38 @@
 }
 .summary-item h6 { margin: 0; font-size: 0.75rem; color: #607d8b; text-transform: uppercase; letter-spacing: .5px; }
 .summary-item p  { margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+
+/* Categoría badge en el selector */
+.categoria-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #11998e22, #38ef7d22);
+  border: 1px solid #11998e44;
+  color: #0a6b63;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.frito-info {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  border: 1px solid #ff980044;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #e65100;
+  display: none;
+  margin-top: 8px;
+}
 </style>
 
 <div class="compras-card">
   <!-- Header -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h4 class="mb-1 fw-bold"><i class="bi bi-cart-plus-fill me-2 text-success"></i>Compras</h4>
+      <h4 class="mb-1 fw-bold"><i class="bi bi-cart-plus-fill me-2 text-success"></i>Agregar Inventario</h4>
       <p class="text-muted small mb-0">Registro de entradas al inventario</p>
     </div>
     <button class="btn-generar" data-bs-toggle="modal" data-bs-target="#modalCompra">
@@ -134,18 +159,32 @@
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <form id="formCompra" class="modal-content" novalidate>
       <div class="modal-header text-white" style="background: linear-gradient(135deg,#11998e,#38ef7d);">
-        <h5 class="modal-title"><i class="bi bi-cart-plus me-2"></i>Nueva Compra</h5>
+        <h5 class="modal-title"><i class="bi bi-cart-plus me-2"></i>Nueva Compra / Agregar Inventario</h5>
         <button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
       </div>
       <div class="modal-body">
         <div class="row g-3">
 
+          <!-- Selector de Categoría -->
+          <div class="col-md-12">
+            <label class="form-label fw-semibold"><i class="bi bi-bookmark-fill me-1 text-success"></i>Categoría</label>
+            <select id="selectCategoria" class="form-select">
+              <option value="">— Todas las categorías —</option>
+            </select>
+          </div>
+
+          <!-- Selector de Producto (filtrado por categoría) -->
           <div class="col-md-12">
             <label class="form-label fw-semibold"><i class="bi bi-box-seam me-1"></i>Producto *</label>
             <select name="id_producto" id="selectProducto" class="form-select" required>
-              <option value="">Cargando productos...</option>
+              <option value="">— Primero selecciona una categoría —</option>
             </select>
             <div id="stockInfo" class="small text-muted mt-1"></div>
+            <!-- Mensaje especial para fritos -->
+            <div class="frito-info" id="fritoInfo">
+              <i class="bi bi-fire me-1"></i>
+              <strong>Producto elaborado (Frito):</strong> El precio de compra puede ser $0 ya que este producto es de elaboración propia.
+            </div>
           </div>
 
           <div class="col-md-6">
@@ -154,11 +193,12 @@
           </div>
 
           <div class="col-md-6">
-            <label class="form-label fw-semibold"><i class="bi bi-cash me-1"></i>Precio Unitario de Compra *</label>
+            <label class="form-label fw-semibold"><i class="bi bi-cash me-1"></i>Precio Unitario de Compra</label>
             <div class="input-group">
               <span class="input-group-text">$</span>
-              <input type="number" name="precio_unitario" id="inputPrecio" class="form-control" step="0.01" min="0.01" placeholder="0.00" required>
+              <input type="number" name="precio_unitario" id="inputPrecio" class="form-control" step="0.01" min="0" placeholder="0.00">
             </div>
+            <div class="small text-muted mt-1" id="precioHint"></div>
           </div>
 
           <div class="col-12">
@@ -260,29 +300,85 @@ async function loadCompras() {
   }
 }
 
-// ── Cargar productos en el select ────────────────────────────────────────────
-async function loadProductos() {
+// ── Cargar categorías ─────────────────────────────────────────────────────
+async function loadCategorias() {
   try {
-    const res  = await fetch('ajax/compras.php?action=productos');
+    const res  = await fetch('ajax/compras.php?action=categorias');
     const j    = await res.json();
-    const sel  = document.getElementById('selectProducto');
-    sel.innerHTML = '<option value="">— Selecciona un producto —</option>';
-    if (j.success && j.productos) {
-      j.productos.forEach(p => {
+    const sel  = document.getElementById('selectCategoria');
+    if (j.success && j.categorias) {
+      j.categorias.forEach(cat => {
         const opt = document.createElement('option');
-        opt.value           = p.id_producto;
-        opt.dataset.precio  = p.precio_compra;
-        opt.dataset.stock   = p.stock;
-        opt.textContent     = `${p.nombre}  (Stock: ${p.stock})`;
+        opt.value       = cat.id_categoria;
+        opt.textContent = cat.nombre;
         sel.appendChild(opt);
       });
     }
   } catch(err) { console.error(err); }
 }
 
+// ── Cargar productos filtrados por categoría ──────────────────────────────
+let esCategoriaFrito = false;
+
+async function loadProductos(id_categoria = '') {
+  try {
+    const url  = id_categoria
+      ? `ajax/compras.php?action=productos&id_categoria=${id_categoria}`
+      : 'ajax/compras.php?action=productos';
+    const res  = await fetch(url);
+    const j    = await res.json();
+    const sel  = document.getElementById('selectProducto');
+    sel.innerHTML = '<option value="">— Selecciona un producto —</option>';
+    if (j.success && j.productos) {
+      if (j.productos.length === 0) {
+        sel.innerHTML = '<option value="">Sin productos en esta categoría</option>';
+      } else {
+        j.productos.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value           = p.id_producto;
+          opt.dataset.precio  = p.precio_compra;
+          opt.dataset.stock   = p.stock;
+          opt.textContent     = `${p.nombre}  (Stock: ${p.stock})`;
+          sel.appendChild(opt);
+        });
+      }
+    }
+    // Reset info
+    document.getElementById('stockInfo').textContent = '';
+    document.getElementById('inputPrecio').value = '';
+    document.getElementById('inputCantidad').value = '';
+    updateTotal();
+  } catch(err) { console.error(err); }
+}
+
+// ── Cambio de categoría ───────────────────────────────────────────────────
+document.getElementById('selectCategoria').addEventListener('change', function() {
+  const id   = this.value;
+  const text = this.options[this.selectedIndex].text.toLowerCase();
+  esCategoriaFrito = text.includes('frito');
+
+  // Mostrar/ocultar info de fritos
+  const fritoInfo = document.getElementById('fritoInfo');
+  fritoInfo.style.display = esCategoriaFrito ? 'block' : 'none';
+
+  // Actualizar hint del precio
+  const precioHint = document.getElementById('precioHint');
+  if (esCategoriaFrito) {
+    precioHint.innerHTML = '<i class="bi bi-info-circle text-warning me-1"></i>Para productos fritos elaborados, puede dejar el precio en $0.';
+    document.getElementById('inputPrecio').min = '0';
+    document.getElementById('inputPrecio').removeAttribute('required');
+  } else {
+    precioHint.textContent = '';
+    document.getElementById('inputPrecio').min = '0.01';
+    document.getElementById('inputPrecio').setAttribute('required', '');
+  }
+
+  loadProductos(id);
+});
+
 // ── Prellenar precio al seleccionar producto ─────────────────────────────────
 document.getElementById('selectProducto').addEventListener('change', function() {
-  const opt   = this.options[this.selectedIndex];
+  const opt    = this.options[this.selectedIndex];
   const precio = opt.dataset.precio || '';
   const stock  = opt.dataset.stock  || '';
   document.getElementById('inputPrecio').value = precio;
@@ -308,6 +404,25 @@ document.getElementById('inputPrecio').addEventListener('input',   updateTotal);
 // ── Enviar formulario ─────────────────────────────────────────────────────────
 document.getElementById('formCompra').addEventListener('submit', async e => {
   e.preventDefault();
+
+  // Validación manual del precio si no es frito
+  const idProducto = document.getElementById('selectProducto').value;
+  const cantidad   = document.getElementById('inputCantidad').value;
+  const precio     = parseFloat(document.getElementById('inputPrecio').value) || 0;
+
+  if (!idProducto) {
+    showAlert('warning', '⚠️ Selecciona un producto.');
+    return;
+  }
+  if (!cantidad || parseInt(cantidad) < 1) {
+    showAlert('warning', '⚠️ Ingresa una cantidad válida.');
+    return;
+  }
+  if (!esCategoriaFrito && precio <= 0) {
+    showAlert('warning', '⚠️ El precio unitario debe ser mayor a $0 para este tipo de producto.');
+    return;
+  }
+
   const fd = new FormData(e.target);
   fd.append('action', 'create');
   try {
@@ -319,6 +434,11 @@ document.getElementById('formCompra').addEventListener('submit', async e => {
       e.target.reset();
       document.getElementById('stockInfo').textContent = '';
       document.getElementById('totalPreview').style.display = 'none';
+      document.getElementById('fritoInfo').style.display = 'none';
+      document.getElementById('precioHint').textContent = '';
+      esCategoriaFrito = false;
+      // Recargar productos
+      loadProductos();
       loadCompras();
     } else {
       showAlert('danger', `❌ ${j.message}`);
@@ -349,11 +469,17 @@ document.getElementById('modalCompra').addEventListener('hidden.bs.modal', () =>
   document.getElementById('formCompra').reset();
   document.getElementById('stockInfo').textContent = '';
   document.getElementById('totalPreview').style.display = 'none';
+  document.getElementById('fritoInfo').style.display = 'none';
+  document.getElementById('precioHint').textContent = '';
+  document.getElementById('selectCategoria').value = '';
+  esCategoriaFrito = false;
+  loadProductos();
 });
 
 // ── Inicializar ───────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   loadCompras();
+  loadCategorias();
   loadProductos();
 });
 </script>

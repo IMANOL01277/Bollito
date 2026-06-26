@@ -74,6 +74,95 @@
 .summary-item h6 { margin: 0; font-size: 0.75rem; color: #607d8b; text-transform: uppercase; letter-spacing: .5px; }
 .summary-item p  { margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b; }
 .stock-warning-text { color: #b45309; font-weight: 600; }
+
+/* ── Estilos para items de venta múltiple ── */
+.item-venta {
+  background: #f8f7ff;
+  border: 1.5px solid #e0dbff;
+  border-radius: 14px;
+  padding: 16px;
+  position: relative;
+  transition: all 0.25s ease;
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.item-venta:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 3px 12px rgba(124,58,237,0.1);
+}
+.item-number {
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.btn-remove-item {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.btn-remove-item:hover {
+  background: #dc2626;
+  color: white;
+  transform: scale(1.1);
+}
+.btn-add-item {
+  border: 2px dashed #a78bfa;
+  border-radius: 12px;
+  background: transparent;
+  color: #7c3aed;
+  padding: 10px 20px;
+  font-weight: 600;
+  width: 100%;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-add-item:hover {
+  background: #f5f3ff;
+  border-color: #7c3aed;
+  transform: translateY(-2px);
+}
+.resumen-venta {
+  background: linear-gradient(135deg, #ede9fe, #f5f3ff);
+  border: 1px solid #c4b5fd;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.resumen-venta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.resumen-venta-row.total {
+  border-top: 1px solid #c4b5fd;
+  margin-top: 8px;
+  padding-top: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+}
 </style>
 
 <div class="ventas-card">
@@ -151,48 +240,41 @@
         <h5 class="modal-title"><i class="bi bi-bag-plus me-2"></i>Nueva Venta</h5>
         <button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
       </div>
-      <div class="modal-body">
-        <div class="row g-3">
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
 
-          <div class="col-md-12">
-            <label class="form-label fw-semibold"><i class="bi bi-box-seam me-1"></i>Producto *</label>
-            <select name="id_producto" id="selectProductoV" class="form-select" required>
-              <option value="">Cargando productos...</option>
-            </select>
-            <div id="stockInfoV" class="small mt-1"></div>
+        <!-- Lista dinámica de items -->
+        <div id="listaItems"></div>
+
+        <!-- Botón agregar producto -->
+        <button type="button" class="btn-add-item mt-2" id="btnAgregarItem">
+          <i class="bi bi-plus-circle-fill"></i> Agregar otro producto
+        </button>
+
+        <!-- Separador -->
+        <hr class="my-3">
+
+        <!-- Resumen de la venta -->
+        <div class="resumen-venta" id="resumenVenta">
+          <div class="resumen-venta-row mb-1">
+            <span class="text-muted">Productos en la venta:</span>
+            <span id="resNumProductos" class="fw-semibold">0</span>
           </div>
-
-          <div class="col-md-6">
-            <label class="form-label fw-semibold"><i class="bi bi-hash me-1"></i>Cantidad *</label>
-            <input type="number" name="cantidad" id="inputCantidadV" class="form-control" min="1" placeholder="0" required>
-            <div id="cantidadWarning" class="small text-danger mt-1" style="display:none">
-              ⚠️ La cantidad supera el stock disponible
-            </div>
+          <div class="resumen-venta-row mb-1">
+            <span class="text-muted">Total unidades:</span>
+            <span id="resTotalUnidades" class="fw-semibold">0</span>
           </div>
-
-          <div class="col-md-6">
-            <label class="form-label fw-semibold"><i class="bi bi-cash me-1"></i>Precio Unitario de Venta *</label>
-            <div class="input-group">
-              <span class="input-group-text">$</span>
-              <input type="number" name="precio_unitario" id="inputPrecioV" class="form-control" step="0.01" min="0.01" placeholder="0.00" required>
-            </div>
+          <div class="resumen-venta-row total">
+            <span>Total venta:</span>
+            <span id="resTotalVenta" style="color:#7c3aed">$0.00</span>
           </div>
-
-          <div class="col-12">
-            <div class="alert alert-primary py-2 mb-0" id="totalPreviewV" style="display:none;">
-              <div class="d-flex gap-4">
-                <span><strong>Total:</strong> <span id="totalSpanV">$0.00</span></span>
-                <span><strong>Ganancia estimada:</strong> <span id="gananciaSpanV" class="text-success fw-bold">$0.00</span></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-12">
-            <label class="form-label fw-semibold"><i class="bi bi-chat-text me-1"></i>Observaciones</label>
-            <textarea name="observaciones" class="form-control" rows="2" placeholder="Ej: Venta a cliente Juan, pedido online #456..."></textarea>
-          </div>
-
         </div>
+
+        <!-- Observaciones -->
+        <div class="mt-3">
+          <label class="form-label fw-semibold"><i class="bi bi-chat-text me-1"></i>Observaciones</label>
+          <textarea name="observaciones" id="observacionesVenta" class="form-control" rows="2" placeholder="Ej: Venta a cliente Juan, pedido online #456..."></textarea>
+        </div>
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -284,94 +366,270 @@ async function loadVentas() {
   }
 }
 
-// ── Cargar productos en el select ────────────────────────────────────────────
-let productosData = {};
+// ── Datos de productos ────────────────────────────────────────────────────────
+let productosData = [];
+
 async function loadProductos() {
   try {
     const res = await fetch('ajax/ventas.php?action=productos');
     const j   = await res.json();
-    const sel = document.getElementById('selectProductoV');
-    sel.innerHTML = '<option value="">— Selecciona un producto —</option>';
     if (j.success && j.productos) {
-      j.productos.forEach(p => {
-        productosData[p.id_producto] = p;
-        const opt = document.createElement('option');
-        opt.value          = p.id_producto;
-        opt.dataset.precio = p.precio_venta;
-        opt.dataset.costo  = p.precio_compra;
-        opt.dataset.stock  = p.stock;
-        opt.textContent    = `${p.nombre}  (Stock disponible: ${p.stock})`;
-        sel.appendChild(opt);
-      });
+      productosData = j.productos;
     }
   } catch(err) { console.error(err); }
 }
 
-// ── Prellenar precio al seleccionar producto ─────────────────────────────────
-document.getElementById('selectProductoV').addEventListener('change', function() {
-  const opt   = this.options[this.selectedIndex];
+// ── Construir opciones del select ─────────────────────────────────────────────
+function buildOptions(excludeIds = []) {
+  let html = '<option value="">— Selecciona un producto —</option>';
+  productosData.forEach(p => {
+    const disabled = excludeIds.includes(String(p.id_producto)) ? 'disabled' : '';
+    html += `<option value="${p.id_producto}" data-precio="${p.precio_venta}" data-costo="${p.precio_compra}" data-stock="${p.stock}" ${disabled}>
+               ${p.nombre}  (Stock: ${p.stock})
+             </option>`;
+  });
+  return html;
+}
+
+// ── Sistema de items dinámicos ────────────────────────────────────────────────
+let itemCounter = 0;
+
+function getSelectedIds(excludeItemId = null) {
+  const selects = document.querySelectorAll('.select-producto-item');
+  const ids = [];
+  selects.forEach(s => {
+    if (s.dataset.itemId !== String(excludeItemId) && s.value) {
+      ids.push(s.value);
+    }
+  });
+  return ids;
+}
+
+function refreshAllSelects() {
+  const selects = document.querySelectorAll('.select-producto-item');
+  selects.forEach(sel => {
+    const currentVal = sel.value;
+    const excludeIds = getSelectedIds(sel.dataset.itemId);
+    sel.innerHTML = buildOptions(excludeIds);
+    if (currentVal) {
+      sel.value = currentVal;
+    }
+  });
+}
+
+function addItem() {
+  itemCounter++;
+  const id = itemCounter;
+  const lista = document.getElementById('listaItems');
+
+  const div = document.createElement('div');
+  div.className = 'item-venta mb-3';
+  div.dataset.itemId = id;
+
+  const excludeIds = getSelectedIds();
+
+  div.innerHTML = `
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <span class="item-number">${lista.children.length + 1}</span>
+      <span class="fw-semibold text-muted small">Producto</span>
+      ${lista.children.length > 0 ? `
+        <button type="button" class="btn-remove-item ms-auto" onclick="removeItem(${id})" title="Eliminar este producto">
+          <i class="bi bi-x"></i>
+        </button>
+      ` : ''}
+    </div>
+    <div class="row g-2">
+      <div class="col-12">
+        <select class="form-select select-producto-item" data-item-id="${id}" id="selectProd_${id}" onchange="onProductoChange(${id})">
+          ${buildOptions(excludeIds)}
+        </select>
+        <div class="small mt-1" id="stockInfo_${id}"></div>
+      </div>
+      <div class="col-6">
+        <label class="form-label small fw-semibold mb-1">Cantidad *</label>
+        <input type="number" class="form-control input-cantidad" id="cantidad_${id}" min="1" placeholder="0" oninput="onItemChange(${id})">
+        <div class="small text-danger mt-1" id="cantWarn_${id}" style="display:none">⚠️ Supera el stock</div>
+      </div>
+      <div class="col-6">
+        <label class="form-label small fw-semibold mb-1">Precio Unitario *</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="number" class="form-control input-precio" id="precio_${id}" step="0.01" min="0.01" placeholder="0.00" oninput="onItemChange(${id})">
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="alert alert-primary py-1 px-2 mb-0 small" id="preview_${id}" style="display:none">
+          Total: <strong id="previewTotal_${id}">$0.00</strong>
+          &nbsp;|&nbsp; Ganancia: <strong id="previewGanancia_${id}" class="text-success">$0.00</strong>
+        </div>
+      </div>
+    </div>
+  `;
+
+  lista.appendChild(div);
+  updateResumen();
+  renumberItems();
+}
+
+function removeItem(id) {
+  const el = document.querySelector(`.item-venta[data-item-id="${id}"]`);
+  if (el) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(-10px)';
+    el.style.transition = 'all 0.25s ease';
+    setTimeout(() => {
+      el.remove();
+      renumberItems();
+      refreshAllSelects();
+      updateResumen();
+    }, 250);
+  }
+}
+
+function renumberItems() {
+  const items = document.querySelectorAll('.item-venta');
+  items.forEach((item, i) => {
+    const numEl = item.querySelector('.item-number');
+    if (numEl) numEl.textContent = i + 1;
+    // Mostrar/ocultar botón eliminar en el primer item
+    const btnRemove = item.querySelector('.btn-remove-item');
+    if (i === 0) {
+      if (btnRemove) btnRemove.style.display = items.length > 1 ? 'flex' : 'none';
+    }
+  });
+}
+
+function onProductoChange(id) {
+  const sel   = document.getElementById(`selectProd_${id}`);
+  const opt   = sel.options[sel.selectedIndex];
   const precio = opt.dataset.precio || '';
   const stock  = opt.dataset.stock  || '';
-  document.getElementById('inputPrecioV').value = precio;
-  const info = document.getElementById('stockInfoV');
+
+  document.getElementById(`precio_${id}`).value = precio;
+
+  const info = document.getElementById(`stockInfo_${id}`);
   if (stock) {
     const clr = parseInt(stock) <= 5 ? 'stock-warning-text' : 'text-success fw-semibold';
     info.innerHTML = `<span class="${clr}">📦 Stock disponible: ${stock} unidades</span>`;
+    document.getElementById(`cantidad_${id}`).max = stock;
   } else {
     info.textContent = '';
+    document.getElementById(`cantidad_${id}`).removeAttribute('max');
   }
-  document.getElementById('inputCantidadV').max = stock || 9999;
-  updateTotalV();
-});
 
-// ── Vista previa del total y ganancia ────────────────────────────────────────
-function updateTotalV() {
-  const sel    = document.getElementById('selectProductoV');
-  const opt    = sel.options[sel.selectedIndex];
-  const cant   = parseFloat(document.getElementById('inputCantidadV').value) || 0;
-  const precio = parseFloat(document.getElementById('inputPrecioV').value)   || 0;
-  const costo  = parseFloat(opt.dataset?.costo || 0);
-  const stock  = parseInt(opt.dataset?.stock   || 9999);
-  const prev   = document.getElementById('totalPreviewV');
-  const warn   = document.getElementById('cantidadWarning');
+  // Actualizar otros selects para deshabilitar el producto ya elegido
+  refreshAllSelects();
+  // Restaurar valor en el select actual (puede haber sido afectado por refresh)
+  document.getElementById(`selectProd_${id}`).value = sel.value;
+
+  onItemChange(id);
+}
+
+function onItemChange(id) {
+  const sel    = document.getElementById(`selectProd_${id}`);
+  const opt    = sel ? sel.options[sel.selectedIndex] : null;
+  const cant   = parseFloat(document.getElementById(`cantidad_${id}`).value) || 0;
+  const precio = parseFloat(document.getElementById(`precio_${id}`).value)   || 0;
+  const costo  = parseFloat(opt?.dataset?.costo || 0);
+  const stock  = parseInt(opt?.dataset?.stock   || 9999);
 
   // Validar stock
+  const warn = document.getElementById(`cantWarn_${id}`);
   if (cant > stock && stock > 0) {
     warn.style.display = '';
-    document.getElementById('btnSubmitVenta').disabled = true;
   } else {
     warn.style.display = 'none';
-    document.getElementById('btnSubmitVenta').disabled = false;
   }
 
+  // Preview
+  const prev = document.getElementById(`preview_${id}`);
   if (cant > 0 && precio > 0) {
-    const total   = cant * precio;
+    const total    = cant * precio;
     const ganancia = cant * (precio - costo);
-    document.getElementById('totalSpanV').textContent    = fmt(total);
-    document.getElementById('gananciaSpanV').textContent = fmt(ganancia);
-    document.getElementById('gananciaSpanV').className   = ganancia >= 0 ? 'text-success fw-bold' : 'text-danger fw-bold';
+    document.getElementById(`previewTotal_${id}`).textContent    = fmt(total);
+    const gEl = document.getElementById(`previewGanancia_${id}`);
+    gEl.textContent = fmt(ganancia);
+    gEl.className   = ganancia >= 0 ? 'text-success' : 'text-danger';
     prev.style.display = '';
   } else {
     prev.style.display = 'none';
   }
+
+  updateResumen();
 }
-document.getElementById('inputCantidadV').addEventListener('input', updateTotalV);
-document.getElementById('inputPrecioV').addEventListener('input',   updateTotalV);
+
+function updateResumen() {
+  const items = document.querySelectorAll('.item-venta');
+  let totalVenta = 0, totalUnid = 0, numProductos = 0;
+  let hayError = false;
+
+  items.forEach(item => {
+    const id    = item.dataset.itemId;
+    const sel   = document.getElementById(`selectProd_${id}`);
+    const cant  = parseFloat(document.getElementById(`cantidad_${id}`)?.value) || 0;
+    const precio = parseFloat(document.getElementById(`precio_${id}`)?.value)  || 0;
+    const stock = parseInt(sel?.options[sel.selectedIndex]?.dataset?.stock || 9999);
+
+    if (sel && sel.value && cant > 0 && precio > 0) {
+      numProductos++;
+      totalVenta += cant * precio;
+      totalUnid  += cant;
+    }
+    if (cant > stock && stock > 0) hayError = true;
+  });
+
+  document.getElementById('resNumProductos').textContent  = numProductos;
+  document.getElementById('resTotalUnidades').textContent = totalUnid;
+  document.getElementById('resTotalVenta').textContent    = fmt(totalVenta);
+  document.getElementById('btnSubmitVenta').disabled      = hayError;
+}
+
+// ── Botón agregar item ─────────────────────────────────────────────────────────
+document.getElementById('btnAgregarItem').addEventListener('click', () => {
+  addItem();
+});
 
 // ── Enviar formulario ─────────────────────────────────────────────────────────
 document.getElementById('formVenta').addEventListener('submit', async e => {
   e.preventDefault();
-  const fd = new FormData(e.target);
+
+  // Recolectar items
+  const items = [];
+  let hayError = false;
+
+  document.querySelectorAll('.item-venta').forEach(item => {
+    const id    = item.dataset.itemId;
+    const sel   = document.getElementById(`selectProd_${id}`);
+    const cant  = parseInt(document.getElementById(`cantidad_${id}`)?.value) || 0;
+    const precio = parseFloat(document.getElementById(`precio_${id}`)?.value) || 0;
+    const stock = parseInt(sel?.options[sel.selectedIndex]?.dataset?.stock || 9999);
+
+    if (sel && sel.value && cant > 0 && precio > 0) {
+      if (cant > stock && stock > 0) { hayError = true; return; }
+      items.push({ id_producto: sel.value, cantidad: cant, precio_unitario: precio });
+    }
+  });
+
+  if (hayError) {
+    showAlert('warning', '⚠️ Hay productos que superan el stock disponible.');
+    return;
+  }
+  if (items.length === 0) {
+    showAlert('warning', '⚠️ Agrega al menos un producto con cantidad y precio válidos.');
+    return;
+  }
+
+  const fd = new FormData();
   fd.append('action', 'create');
+  fd.append('items', JSON.stringify(items));
+  fd.append('observaciones', document.getElementById('observacionesVenta').value);
+
   try {
     const res = await fetch('ajax/ventas.php', {method:'POST', body:fd});
     const j   = await res.json();
     if (j.success) {
       showAlert('success', `✅ ${j.message}`);
       bootstrap.Modal.getInstance('#modalVenta').hide();
-      e.target.reset();
-      document.getElementById('stockInfoV').textContent = '';
-      document.getElementById('totalPreviewV').style.display = 'none';
       loadVentas();
     } else {
       showAlert('danger', `❌ ${j.message}`);
@@ -399,17 +657,35 @@ async function deleteVenta(id) {
 
 // ── Reset modal al cerrar ─────────────────────────────────────────────────────
 document.getElementById('modalVenta').addEventListener('hidden.bs.modal', () => {
-  document.getElementById('formVenta').reset();
-  document.getElementById('stockInfoV').textContent       = '';
-  document.getElementById('totalPreviewV').style.display  = 'none';
-  document.getElementById('cantidadWarning').style.display = 'none';
-  document.getElementById('btnSubmitVenta').disabled       = false;
+  document.getElementById('listaItems').innerHTML = '';
+  document.getElementById('observacionesVenta').value = '';
+  itemCounter = 0;
+  // Agregar primer item vacío
+  addItem();
+  // Renumber: ocultar botón remove del primero
+  renumberItems();
+  updateResumen();
+});
+
+// ── Al mostrar el modal: recargar productos ───────────────────────────────────
+document.getElementById('modalVenta').addEventListener('show.bs.modal', async () => {
+  await loadProductos();
+  // Si no hay items, agregar el primero
+  if (document.querySelectorAll('.item-venta').length === 0) {
+    addItem();
+    renumberItems();
+  } else {
+    // Refrescar selects con datos actuales
+    refreshAllSelects();
+  }
 });
 
 // ── Inicializar ───────────────────────────────────────────────────────────────
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   loadVentas();
-  loadProductos();
+  await loadProductos();
+  addItem();
+  renumberItems();
 });
 </script>
 

@@ -35,9 +35,26 @@ if ($action === 'list') {
     res(true, ['compras' => $rows]);
 }
 
-// ── Listar productos disponibles para el select ────────────────────────────
+// ── Listar categorías ───────────────────────────────────────────────────────
+if ($action === 'categorias') {
+    $result = pg_query($conn, "SELECT id_categoria, nombre FROM categorias ORDER BY nombre ASC");
+    if (!$result) res(false, ['message' => 'Error al obtener categorías']);
+    $rows = [];
+    while ($r = pg_fetch_assoc($result)) $rows[] = $r;
+    res(true, ['categorias' => $rows]);
+}
+
+// ── Listar productos disponibles para el select (con filtro opcional por categoría) ──
 if ($action === 'productos') {
-    $result = pg_query($conn, "SELECT id_producto, nombre, precio_compra, stock FROM productos WHERE activo = true ORDER BY nombre ASC");
+    $id_categoria = isset($_GET['id_categoria']) ? (int)$_GET['id_categoria'] : 0;
+    if ($id_categoria > 0) {
+        $result = pg_query_params($conn,
+            "SELECT id_producto, nombre, precio_compra, stock FROM productos WHERE activo = true AND id_categoria = $1 ORDER BY nombre ASC",
+            [$id_categoria]
+        );
+    } else {
+        $result = pg_query($conn, "SELECT id_producto, nombre, precio_compra, stock FROM productos WHERE activo = true ORDER BY nombre ASC");
+    }
     if (!$result) res(false, ['message' => 'Error al obtener productos']);
     $rows = [];
     while ($r = pg_fetch_assoc($result)) $rows[] = $r;
@@ -52,14 +69,24 @@ if ($action === 'create') {
     $observaciones   = pg_escape_string($conn, trim($_POST['observaciones'] ?? ''));
     $id_usuario      = (int)($_SESSION['id_usuario'] ?? 0);
 
-    if ($id_producto <= 0 || $cantidad <= 0 || $precio_unitario <= 0) {
-        res(false, ['message' => 'Datos inválidos. Verifica producto, cantidad y precio.']);
+    if ($id_producto <= 0 || $cantidad <= 0) {
+        res(false, ['message' => 'Datos inválidos. Verifica producto y cantidad.']);
     }
 
-    // Verificar que el producto existe
-    $check = pg_query_params($conn, "SELECT id_producto FROM productos WHERE id_producto = $1 AND activo = true", [$id_producto]);
+    // Verificar que el producto existe y obtener su categoría
+    $check = pg_query_params($conn,
+        "SELECT p.id_producto, c.nombre AS categoria FROM productos p LEFT JOIN categorias c ON c.id_categoria = p.id_categoria WHERE p.id_producto = $1 AND p.activo = true",
+        [$id_producto]
+    );
     if (!$check || pg_num_rows($check) === 0) {
         res(false, ['message' => 'Producto no encontrado.']);
+    }
+    $prodInfo = pg_fetch_assoc($check);
+
+    // Permitir precio 0 solo si la categoría es "Frito" (elaborado); de lo contrario requerir precio > 0
+    $esFrito = strtolower(trim($prodInfo['categoria'] ?? '')) === 'frito';
+    if (!$esFrito && $precio_unitario <= 0) {
+        res(false, ['message' => 'El precio unitario debe ser mayor a 0 para este producto.']);
     }
 
     // Iniciar transacción

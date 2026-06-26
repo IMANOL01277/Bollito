@@ -464,7 +464,7 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
     <div class="nav-section-title">Operaciones</div>
     <a href="compras.php" class="nav-link-custom <?= $current_page === 'compras' ? 'active' : '' ?>">
       <i class="bi bi-cart-plus-fill"></i>
-      <span>Compras</span>
+      <span>Agregar Inventario</span>
     </a>
     <a href="ventas.php" class="nav-link-custom <?= $current_page === 'ventas' ? 'active' : '' ?>">
       <i class="bi bi-bag-check-fill"></i>
